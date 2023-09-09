@@ -1,0 +1,116 @@
+﻿
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Brand List</h2>
+
+<input id="brand-input" placeholder="Enter brand name" type="text" />
+<button id="add-brand-btn">Add</button>
+<button style="display:none" id="edit-brand-btn">Edit</button>
+
+
+<p id="loading">
+    Fetching data....
+</p>
+
+<ul id="brand-list">
+</ul>
+
+@section Scripts
+{
+    <script>
+        function renderBrands(data) {
+            let list = "";
+            for (let i = 0; i < data.length; i++) {
+                list += `<li data-id=${data[i].BrandID}><span>${data[i].BrandName}</span> <button class="edit">Edit</button>  <button class="delete">Delete</button></li>`;
+            }
+
+            $("#brand-list").html(list);
+        }
+
+
+        // GET
+        $.ajax({
+            type: "GET",
+            url: "/api/brand",
+            success: (data = []) => {
+                renderBrands(data)
+            },
+            error: () => {
+                console.log('error');
+            },
+            beforeSend: function () {
+                $('#loading').show();
+            },
+            complete: function () {
+                $('#loading').hide();
+            }
+        })
+
+        // POST
+        $("#add-brand-btn").click(() => {
+            const newBrandName = $("#brand-input").val();
+
+            $.ajax({
+                type: "POST",
+                url: "/api/brand",
+                data: { BrandName: newBrandName },
+                dataType: "json",
+                success: (response) => {
+                    renderBrands(response);
+
+                    // Reset input + focus
+                    $("#brand-input").val("");
+                    $("#brand-input").focus();
+                }
+            })
+        })
+
+        // PUT
+        $("#brand-list").on('click', '.edit', (e) => {
+            $("#add-brand-btn").hide();
+            $("#edit-brand-btn").show();
+
+            const BrandId = e.target.closest("li").dataset.id;
+
+            $("#edit-brand-btn").click(() => {
+                const editValue = $("#brand-input").val()
+
+                $.ajax({
+                    type: "PUT",
+                    url: "/api/brand",
+                    data: { BrandName: editValue, BrandId: BrandId },
+                    dataType: "json",
+                    success: (response) => {
+                        renderBrands(response);
+
+                        // Reset input + focus
+                        $("#brand-input").val("");
+                        $("#brand-input").focus();
+
+                        $("#add-brand-btn").show();
+                        $("#edit-brand-btn").hide();
+                    }
+                })
+
+            })
+        })
+
+        // DELETE
+        $("#brand-list").on('click', '.delete', (e) => {
+            const BrandId = e.target.closest("li").dataset.id;
+
+            $.ajax({
+                type: "DELETE",
+                url: `/api/brand?id=${BrandId}`,
+                dataType: "json",
+                success: (response) => {
+                    renderBrands(response);
+
+                }
+            })
+        })
+    </script>
+}
